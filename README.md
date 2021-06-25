@@ -1,7 +1,9 @@
+# 新的面板 [x-ui](https://github.com/sprov065/x-ui) 正在开发中，支持 v2-ui 的所有功能，解决了 v2-ui 存在的一些问题，并增加了总流量限制功能，欢迎测试使用。待 x-ui 稳定后，v2-ui 将不再提供更新
+
 中文 | [English](README.en.md)
 
 # v2-ui
-支持多协议多用户的 v2ray 面板，Support multi-protocol multi-user v2ray panel
+支持多协议多用户的 xray 面板，Support multi-protocol multi-user xray panel
 
 # 帮助翻译
 面板目前支持中文与英文，如果你发现了错误的翻译想帮助修正，或者想帮助翻译成更多的语言，可以在 translations 文件夹中找到各语言对应的翻译，例如 [translations/zh/LC_MESSAGES/message.po](translations/zh/LC_MESSAGES/messages.po) 文件是中文翻译内容。其中 msgid 是英文原文，msgstr 是翻译后的内容，每个 msgid 对应一个 msgstr。
@@ -41,8 +43,8 @@ bash <(curl -Ls https://blog.sprov.xyz/v2-ui.sh)
 ```
 
 ## 手动安装&升级
-### 手动安装 v2ray
-无需手动安装 v2ray，v2-ui 自带官方 v2ray 内核
+### 手动安装 xray
+无需手动安装 v2ray，v2-ui 自带官方 xray 内核
 
 ### 手动安装 v2-ui
 https://github.com/sprov065/v2-ui/releases
@@ -55,7 +57,7 @@ cd /usr/local/
 tar zxvf v2-ui-linux.tar.gz
 rm v2-ui-linux.tar.gz -f
 cd v2-ui
-chmod +x v2-ui bin/v2ray-v2-ui bin/v2ctl
+chmod +x v2-ui bin/xray-v2-ui
 cp -f v2-ui.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable v2-ui
@@ -155,3 +157,7 @@ systemctl daemon-reload
 群组：https://t.me/sprov_blog
 
 频道：https://t.me/sprov_channel
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/sprov065/v2-ui.svg)](https://starchart.cc/sprov065/v2-ui)

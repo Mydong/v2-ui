@@ -29,6 +29,19 @@ else
     echo -e "${red}未检测到系统版本，请联系脚本作者！${plain}\n" && exit 1
 fi
 
+arch=$(arch)
+
+if [[ $arch == "x86_64" || $arch == "x64" || $arch == "amd64" ]]; then
+  arch="amd64"
+elif [[ $arch == "aarch64" || $arch == "arm64" ]]; then
+  arch="arm64"
+else
+  arch="amd64"
+  echo -e "${red}检测架构失败，使用默认架构: ${arch}${plain}"
+fi
+
+echo "架构: ${arch}"
+
 if [ $(getconf WORD_BIT) != '32' ] && [ $(getconf LONG_BIT) != '64' ] ; then
     echo "本软件不支持 32 位系统(x86)，请使用 64 位系统(x86_64)，如果检测有误，请联系作者"
     exit -1
@@ -96,9 +109,9 @@ uninstall_old_v2ray() {
         systemctl daemon-reload
     fi
     if [[ -f /usr/local/bin/v2ray ]]; then
-        confirm "检测到其它方式安装的 v2ray，是否卸载，v2-ui 自带官方 v2ray 内核，为防止与其端口冲突，建议卸载" "Y"
+        confirm "检测到其它方式安装的 v2ray，是否卸载，v2-ui 自带官方 xray 内核，为防止与其端口冲突，建议卸载" "Y"
         if [[ $? != 0 ]]; then
-            echo -e "${red}你选择了不卸载，请自行确保其它脚本安装的 v2ray 与 v2-ui ${green}自带的官方 v2ray 内核${red}不会端口冲突${plain}"
+            echo -e "${red}你选择了不卸载，请自行确保其它脚本安装的 v2ray 与 v2-ui ${green}自带的官方 xray 内核${red}不会端口冲突${plain}"
         else
             echo -e "${green}开始卸载其它方式安装的 v2ray${plain}"
             systemctl stop v2ray
@@ -108,80 +121,19 @@ uninstall_old_v2ray() {
     fi
 }
 
-install_v2ray() {
-    uninstall_old_v2ray
-    echo -e "${green}开始安装or升级v2ray${plain}"
-    bash <(curl https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh)
-    if [[ $? -ne 0 ]]; then
-        echo -e "${red}v2ray安装或升级失败，请检查错误信息${plain}"
-        echo -e "${yellow}大多数原因可能是因为你当前服务器所在的地区无法下载 v2ray 安装包导致的，这在国内的机器上较常见，解决方式是手动安装 v2ray，具体原因还是请看上面的错误信息${plain}"
-        exit 1
-    fi
-    echo "
-[Unit]
-Description=V2Ray Service
-After=network.target nss-lookup.target
-
-[Service]
-User=root
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-NoNewPrivileges=true
-Environment=V2RAY_LOCATION_ASSET=/usr/local/share/v2ray/
-ExecStart=/usr/local/bin/v2ray -confdir /usr/local/etc/v2ray/
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-" > /etc/systemd/system/v2ray.service
-    if [[ ! -f /usr/local/etc/v2ray/00_log.json ]]; then
-        echo "{}" > /usr/local/etc/v2ray/00_log.json
-    fi
-    if [[ ! -f /usr/local/etc/v2ray/01_api.json ]]; then
-        echo "{}" > /usr/local/etc/v2ray/01_api.json
-    fi
-    if [[ ! -f /usr/local/etc/v2ray/02_dns.json ]]; then
-        echo "{}" > /usr/local/etc/v2ray/02_dns.json
-    fi
-    if [[ ! -f /usr/local/etc/v2ray/03_routing.json ]]; then
-        echo "{}" > /usr/local/etc/v2ray/03_routing.json
-    fi
-    if [[ ! -f /usr/local/etc/v2ray/04_policy.json ]]; then
-        echo "{}" > /usr/local/etc/v2ray/04_policy.json
-    fi
-    if [[ ! -f /usr/local/etc/v2ray/05_inbounds.json ]]; then
-        echo "{}" > /usr/local/etc/v2ray/05_inbounds.json
-    fi
-    if [[ ! -f /usr/local/etc/v2ray/06_outbounds.json ]]; then
-        echo "{}" > /usr/local/etc/v2ray/06_outbounds.json
-    fi
-    if [[ ! -f /usr/local/etc/v2ray/07_transport.json ]]; then
-        echo "{}" > /usr/local/etc/v2ray/07_transport.json
-    fi
-    if [[ ! -f /usr/local/etc/v2ray/08_stats.json ]]; then
-        echo "{}" > /usr/local/etc/v2ray/08_stats.json
-    fi
-    if [[ ! -f /usr/local/etc/v2ray/09_reverse.json ]]; then
-        echo "{}" > /usr/local/etc/v2ray/09_reverse.json
-    fi
-    systemctl daemon-reload
-    systemctl enable v2ray
-    systemctl start v2ray
-}
-
-close_firewall() {
-    if [[ x"${release}" == x"centos" ]]; then
-        systemctl stop firewalld
-        systemctl disable firewalld
-    elif [[ x"${release}" == x"ubuntu" ]]; then
-        ufw disable
+#close_firewall() {
+#    if [[ x"${release}" == x"centos" ]]; then
+#        systemctl stop firewalld
+#        systemctl disable firewalld
+#    elif [[ x"${release}" == x"ubuntu" ]]; then
+#        ufw disable
 #    elif [[ x"${release}" == x"debian" ]]; then
 #        iptables -P INPUT ACCEPT
 #        iptables -P OUTPUT ACCEPT
 #        iptables -P FORWARD ACCEPT
 #        iptables -F
-    fi
-}
+#    fi
+#}
 
 install_v2-ui() {
     systemctl stop v2-ui
@@ -197,26 +149,26 @@ install_v2-ui() {
             exit 1
         fi
         echo -e "检测到 v2-ui 最新版本：${last_version}，开始安装"
-        wget -N --no-check-certificate -O /usr/local/v2-ui-linux.tar.gz https://github.com/sprov065/v2-ui/releases/download/${last_version}/v2-ui-linux.tar.gz
+        wget -N --no-check-certificate -O /usr/local/v2-ui-linux-${arch}.tar.gz https://github.com/sprov065/v2-ui/releases/download/${last_version}/v2-ui-linux-${arch}.tar.gz
         if [[ $? -ne 0 ]]; then
             echo -e "${red}下载 v2-ui 失败，请确保你的服务器能够下载 Github 的文件${plain}"
             exit 1
         fi
     else
         last_version=$1
-        url="https://github.com/sprov065/v2-ui/releases/download/${last_version}/v2-ui-linux.tar.gz"
+        url="https://github.com/sprov065/v2-ui/releases/download/${last_version}/v2-ui-linux-${arch}.tar.gz"
         echo -e "开始安装 v2-ui v$1"
-        wget -N --no-check-certificate -O /usr/local/v2-ui-linux.tar.gz ${url}
+        wget -N --no-check-certificate -O /usr/local/v2-ui-linux-${arch}.tar.gz ${url}
         if [[ $? -ne 0 ]]; then
             echo -e "${red}下载 v2-ui v$1 失败，请确保此版本存在${plain}"
             exit 1
         fi
     fi
 
-    tar zxvf v2-ui-linux.tar.gz
-    rm v2-ui-linux.tar.gz -f
+    tar zxvf v2-ui-linux-${arch}.tar.gz
+    rm v2-ui-linux-${arch}.tar.gz -f
     cd v2-ui
-    chmod +x v2-ui bin/v2ray-v2-ui bin/v2ctl
+    chmod +x v2-ui bin/xray-v2-ui-linux-${arch}
     cp -f v2-ui.service /etc/systemd/system/
     systemctl daemon-reload
     systemctl enable v2-ui
@@ -250,5 +202,5 @@ install_v2-ui() {
 echo -e "${green}开始安装${plain}"
 install_base
 uninstall_old_v2ray
-close_firewall
+#close_firewall
 install_v2-ui $1
